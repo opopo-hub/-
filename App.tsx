@@ -46,9 +46,11 @@ const App: React.FC = () => {
   
   // UI Effects
   const [isHit, setIsHit] = useState(false);
+  const [isBossHit, setIsBossHit] = useState(false); // Visual state for boss taking damage
   const [evolutionMessage, setEvolutionMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   // Leaderboard
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -89,8 +91,55 @@ const App: React.FC = () => {
     localStorage.setItem('dragon_music_leaderboard', JSON.stringify(newLeaderboard));
   };
 
-  const playSoundEffect = (type: 'impact' | 'cry', isCritical: boolean = false) => {
+  // Sound Effect System
+  const getAudioContext = () => {
+    if (!audioCtxRef.current) {
+      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+      if (AudioContextClass) {
+        audioCtxRef.current = new AudioContextClass();
+      }
+    }
+    return audioCtxRef.current;
+  };
+
+  const generateThudSound = (ctx: AudioContext, startTime: number, volume: number = 1.0) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    // Low frequency triangle wave for "Thud"
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(120, startTime);
+    osc.frequency.exponentialRampToValueAtTime(40, startTime + 0.1);
+    
+    // Envelope
+    gain.gain.setValueAtTime(volume, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+    
+    osc.start(startTime);
+    osc.stop(startTime + 0.3);
+  };
+
+  const playSoundEffect = (type: 'impact' | 'cry' | 'defeat', isCritical: boolean = false) => {
     if (isMuted) return;
+
+    if (type === 'defeat') {
+        // Cat hiss when Boss dies
+        const audio = new Audio('https://actions.google.com/sounds/v1/animals/cat_hiss.ogg');
+        audio.volume = 0.8;
+        audio.play().catch(e => console.error("Defeat sound failed", e));
+        return;
+    }
+
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    
+    // Ensure context is running (browsers suspend it until user interaction)
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
 
     if (type === 'cry') {
       const cries = [
@@ -99,31 +148,37 @@ const App: React.FC = () => {
         'https://actions.google.com/sounds/v1/animals/cat_hiss.ogg'
       ];
       const selected = cries[Math.floor(Math.random() * cries.length)];
-      new Audio(selected).play().catch(e => console.log('Audio play failed', e));
+      const audio = new Audio(selected);
+      audio.volume = 0.6;
+      audio.play().catch(e => console.error("Cry play failed", e));
     } else if (type === 'impact') {
-        const thudUrl = 'https://actions.google.com/sounds/v1/foley/body_fall_heavy.ogg';
-        const audio = new Audio(thudUrl);
-        audio.volume = 1.0;
-        audio.play().catch(e => console.log('Audio play failed', e));
+        const now = ctx.currentTime;
+        
+        // Initial Hit
+        generateThudSound(ctx, now, 1.0);
 
         if (isCritical) {
-            // Simulated Echo: 2 seconds duration
-            const delays = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000];
-            delays.forEach((delay, i) => {
-                setTimeout(() => {
-                    const echo = new Audio(thudUrl);
-                    // Decay volume: starts at 0.9 and goes down to 0
-                    const vol = Math.max(0, 0.9 - (i * 0.09));
-                    echo.volume = vol;
-                    echo.play().catch(e => console.log('Echo play failed', e));
-                }, delay);
-            });
+            // Echo Effect: Repeat the sound 8 times over 2 seconds
+            // 2000ms / 8 = 250ms interval
+            for (let i = 1; i <= 8; i++) {
+                const delay = i * 0.25; // 0.25, 0.5, ... 2.0
+                const decayVolume = Math.max(0, 1.0 - (i * 0.12)); // Volume fades out
+                generateThudSound(ctx, now + delay, decayVolume);
+            }
         }
     }
   };
 
+  const handleRestart = () => {
+    window.location.reload();
+  };
+
   const startGame = () => {
     if (!playerNameInput.trim()) return alert("이름을 입력해주세요!");
+    
+    // Initialize Audio Context on user interaction
+    getAudioContext();
+    
     setStats(prev => ({ ...prev, name: playerNameInput }));
     setQuestions(generateRound1Questions());
     setPhase(GamePhase.ROUND_1);
@@ -259,6 +314,10 @@ const App: React.FC = () => {
         return { ...prev, hp: newHp };
      });
 
+     // Trigger Boss Hit Visual
+     setIsBossHit(true);
+     setTimeout(() => setIsBossHit(false), 500);
+
      // Play Impact Sound shortly after
      setTimeout(() => playSoundEffect('impact'), 300);
 
@@ -268,7 +327,8 @@ const App: React.FC = () => {
 
      // Check Win
      if (boss.hp - move.damage <= 0) {
-         handleVictory();
+         playSoundEffect('defeat'); // Play defeat sound
+         setTimeout(handleVictory, 1500); // Delay victory to let sound play
      } else {
          setTimeout(bossTurn, 1500);
      }
@@ -293,16 +353,23 @@ const App: React.FC = () => {
 
       const move = moves[moveIndex];
       
-      addBattleLog(`디아루가의 ${move.name}!`);
+      // Critical Hit Check for Boss
+      // 30% chance for Critical Hit
+      const isBossCrit = Math.random() < 0.3;
+      // 50% extra damage if Critical
+      const damage = isBossCrit ? Math.floor(move.damage * 1.5) : move.damage;
+      
+      addBattleLog(`디아루가의 ${move.name}! ${isBossCrit ? '급소에 맞았다! (Critical +50% Damage)' : ''}`);
       
       // Animation delay then damage
       setTimeout(() => {
           setIsHit(true);
-          playSoundEffect('impact'); // Boss hits player
+          // Pass isBossCrit as second arg to trigger echo if critical
+          playSoundEffect('impact', isBossCrit); 
           setTimeout(() => setIsHit(false), 500);
           
           setStats(prev => {
-              const newHp = prev.hp - move.damage;
+              const newHp = prev.hp - damage;
               if (newHp <= 0) {
                   setTimeout(() => setPhase(GamePhase.GAME_OVER), 1000);
                   return { ...prev, hp: 0 };
@@ -310,7 +377,7 @@ const App: React.FC = () => {
               return { ...prev, hp: newHp };
           });
           
-          addBattleLog(`당신은 ${move.damage}의 피해를 입었습니다.`);
+          addBattleLog(`당신은 ${damage}의 피해를 입었습니다.`);
           setIsPlayerTurn(true);
       }, 1000);
   };
@@ -380,7 +447,7 @@ const App: React.FC = () => {
           <div className="min-h-screen flex flex-col items-center justify-center bg-black text-red-600 p-4">
               <h1 className="text-6xl font-black mb-4">GAME OVER</h1>
               <p className="text-gray-400 mb-8">당신의 드래곤이 쓰러졌습니다...</p>
-              <Leaderboard entries={leaderboard} currentScore={stats.score} onRestart={() => window.location.reload()} />
+              <Leaderboard entries={leaderboard} currentScore={stats.score} onRestart={handleRestart} />
           </div>
       );
   }
@@ -390,7 +457,7 @@ const App: React.FC = () => {
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-black text-white p-4">
             <h1 className="text-6xl font-black text-yellow-400 mb-4 animate-bounce">VICTORY!</h1>
             <p className="text-xl mb-8">디아루가를 물리치고 세계를 구했습니다!</p>
-            <Leaderboard entries={leaderboard} currentScore={stats.score} onRestart={() => window.location.reload()} />
+            <Leaderboard entries={leaderboard} currentScore={stats.score} onRestart={handleRestart} />
         </div>
       );
   }
@@ -482,6 +549,7 @@ const App: React.FC = () => {
                 onAttack={handleBossAttack}
                 isPlayerTurn={isPlayerTurn}
                 battleLog={battleLog}
+                isHit={isBossHit}
             />
         )}
     </MainLayout>

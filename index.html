@@ -43,6 +43,20 @@
       .damage-flash {
         animation: flash-red 0.3s ease-in-out;
       }
+      @keyframes bob {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(8px); }
+      }
+      .animate-bob {
+        animation: bob 2s infinite ease-in-out;
+      }
+      @keyframes wind-flicker {
+        0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); transform: skewX(0deg); }
+        50% { filter: brightness(1.1) drop-shadow(2px -2px 5px rgba(255, 100, 0, 0.5)); transform: skewX(-2deg); }
+      }
+      .animate-wind {
+        animation: wind-flicker 3s infinite ease-in-out;
+      }
     </style>
   <script type="importmap">
 {

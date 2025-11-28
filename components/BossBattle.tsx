@@ -10,9 +10,10 @@ interface BossBattleProps {
   onAttack: (moveId: string) => void;
   isPlayerTurn: boolean;
   battleLog: string[];
+  isHit?: boolean;
 }
 
-export const BossBattle: React.FC<BossBattleProps> = ({ boss, playerStats, moveUsage, onAttack, isPlayerTurn, battleLog }) => {
+export const BossBattle: React.FC<BossBattleProps> = ({ boss, playerStats, moveUsage, onAttack, isPlayerTurn, battleLog, isHit }) => {
   
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col h-full">
@@ -24,8 +25,11 @@ export const BossBattle: React.FC<BossBattleProps> = ({ boss, playerStats, moveU
            <div className="w-full max-w-xs mb-2">
             <HealthBar current={boss.hp} max={boss.maxHp} label={DIALGA_CONFIG.name} color="bg-purple-600" />
            </div>
-           <div className="relative w-48 h-48 md:w-64 md:h-64">
-              <img src={DIALGA_CONFIG.sprite} alt="Dialga" className="w-full h-full object-contain drop-shadow-2xl animate-pulse-slow" />
+           <div className={`relative w-48 h-48 md:w-64 md:h-64 ${isHit ? 'shake' : 'animate-bob'}`}>
+              <img src={DIALGA_CONFIG.sprite} alt="Dialga" className={`w-full h-full object-contain drop-shadow-2xl ${isHit ? 'brightness-50 saturate-200' : ''}`} />
+              {isHit && (
+                <div className="absolute inset-0 bg-red-500/40 rounded-full animate-pulse"></div>
+              )}
            </div>
         </div>
 
