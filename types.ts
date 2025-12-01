@@ -2,6 +2,7 @@ import React from 'react';
 
 export enum GamePhase {
   INTRO = 'INTRO',
+  SELECTION = 'SELECTION',
   ROUND_1 = 'ROUND_1',
   ROUND_2 = 'ROUND_2',
   EVOLUTION = 'EVOLUTION',
@@ -31,8 +32,11 @@ export interface PlayerStats {
   name: string;
 }
 
+export type PokemonSpecies = 'charmander' | 'chimchar' | 'piplup';
+
 export interface Pokemon {
-  stage: 0 | 1 | 2; // 0: Charmander, 1: Charmeleon, 2: Charizard
+  species: PokemonSpecies;
+  stage: 0 | 1 | 2; 
   isShiny: boolean;
 }
 
@@ -46,6 +50,7 @@ export interface Question {
 export interface LeaderboardEntry {
   name: string;
   score: number;
+  isShiny: boolean;
   date: string;
 }
 
