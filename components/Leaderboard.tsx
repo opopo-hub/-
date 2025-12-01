@@ -1,6 +1,6 @@
 import React from 'react';
 import { LeaderboardEntry } from '../types';
-import { Trophy, Share2 } from 'lucide-react';
+import { Trophy, Share2, Sparkles } from 'lucide-react';
 
 interface LeaderboardProps {
   entries: LeaderboardEntry[];
@@ -53,16 +53,23 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentScore,
         ) : (
             entries.map((entry, index) => (
             <div key={index} className="flex justify-between items-center bg-white/5 p-3 rounded hover:bg-white/10 transition-colors">
-                <div className="flex items-center gap-3">
-                <span className={`
-                    w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold
-                    ${index === 0 ? 'bg-yellow-400 text-black' : 
-                      index === 1 ? 'bg-gray-300 text-black' : 
-                      index === 2 ? 'bg-amber-600 text-black' : 'bg-gray-700 text-gray-300'}
-                `}>
-                    {index + 1}
-                </span>
-                <span className="font-semibold truncate max-w-[120px]">{entry.name}</span>
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <span className={`
+                        flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold
+                        ${index === 0 ? 'bg-yellow-400 text-black' : 
+                          index === 1 ? 'bg-gray-300 text-black' : 
+                          index === 2 ? 'bg-amber-600 text-black' : 'bg-gray-700 text-gray-300'}
+                    `}>
+                        {index + 1}
+                    </span>
+                    <div className="flex flex-col items-start truncate">
+                        <span className="font-semibold truncate max-w-[100px] text-white text-sm">{entry.name}</span>
+                        {entry.isShiny && (
+                           <span className="flex items-center text-[10px] text-yellow-300 gap-1">
+                               <Sparkles size={10} /> 이로치 마스터
+                           </span>
+                        )}
+                    </div>
                 </div>
                 <span className="font-mono text-yellow-200">{Math.floor(entry.score).toLocaleString()}</span>
             </div>

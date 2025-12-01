@@ -200,35 +200,44 @@ export const calculateDamage = () => {
     return { dmg: 45, msg: "급소에 맞았다! (Critical)" };
 };
 
-const LEADERBOARD_KEY = 'dragon_math_leaderboard';
+const LEADERBOARD_KEY = 'dragon_music_math_leaderboard_v1';
 
 export const getLeaderboardData = (): LeaderboardEntry[] => {
   try {
     const data = localStorage.getItem(LEADERBOARD_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    
+    const parsed = JSON.parse(data);
+    // Validation check: ensure it's an array and has correct properties
+    if (!Array.isArray(parsed)) return [];
+    
+    return parsed.sort((a, b) => b.score - a.score).slice(0, 10);
   } catch (e) {
     console.error("Failed to load leaderboard", e);
     return [];
   }
 };
 
-export const saveLeaderboardData = (name: string, score: number): LeaderboardEntry[] => {
-  const currentData = getLeaderboardData();
-  const newEntry: LeaderboardEntry = {
-    name,
-    score,
-    date: new Date().toISOString()
-  };
-  
-  const newData = [...currentData, newEntry]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10); // Keep top 10
-    
+export const saveLeaderboardData = (name: string, score: number, isShiny: boolean): LeaderboardEntry[] => {
   try {
+    const currentData = getLeaderboardData();
+    
+    const newEntry: LeaderboardEntry = {
+      name: name.trim() || "Unknown",
+      score: score,
+      isShiny: isShiny,
+      date: new Date().toISOString()
+    };
+    
+    // Add new entry, Sort descending by score, Keep top 10
+    const newData = [...currentData, newEntry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+      
     localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(newData));
+    return newData;
   } catch (e) {
     console.error("Failed to save leaderboard", e);
+    return [];
   }
-  
-  return newData;
 };
