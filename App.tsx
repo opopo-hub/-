@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GamePhase, PlayerStats, Pokemon, Question, LeaderboardEntry, Boss } from './types';
 import { POKEMON_CONFIG, DIALGA_CONFIG, SHOP_CONFIG, CHARIZARD_MOVES } from './constants';
-import { generateRound1Questions, generateRound2Questions, calculateDamage, getLeaderboardData, saveLeaderboardData } from './services/gameLogic';
+import { generateRound1Questions, generateRound2Questions, calculateDamage } from './services/gameLogic';
 import { PokemonDisplay } from './components/PokemonDisplay';
 import { QuizGame } from './components/QuizGame';
 import { HealthBar } from './components/HealthBar';
 import { Shop } from './components/Shop';
 import { BossBattle } from './components/BossBattle';
 import { Leaderboard } from './components/Leaderboard';
-import { Volume2, VolumeX, Share2 } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const App: React.FC = () => {
@@ -74,14 +74,21 @@ const App: React.FC = () => {
     }
   }, [phase, isMuted]);
 
-  // Load Leaderboard on mount
+  // Load Leaderboard
   useEffect(() => {
-    setLeaderboard(getLeaderboardData());
+    const saved = localStorage.getItem('dragon_music_leaderboard');
+    if (saved) {
+      setLeaderboard(JSON.parse(saved));
+    }
   }, []);
 
   const saveScore = (name: string, score: number) => {
-    const newLeaderboard = saveLeaderboardData(name, score);
+    const newEntry: LeaderboardEntry = { name, score, date: new Date().toISOString() };
+    const newLeaderboard = [...leaderboard, newEntry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
     setLeaderboard(newLeaderboard);
+    localStorage.setItem('dragon_music_leaderboard', JSON.stringify(newLeaderboard));
   };
 
   // Sound Effect System
@@ -164,30 +171,6 @@ const App: React.FC = () => {
 
   const handleRestart = () => {
     window.location.reload();
-  };
-
-  const handleShare = () => {
-      // Remove query parameters to ensure the link works for others
-      const url = window.location.origin + window.location.pathname;
-      
-      navigator.clipboard.writeText(url)
-        .then(() => {
-          alert('사이트 링크가 복사되었습니다! 친구들에게 공유해보세요.');
-        })
-        .catch(() => {
-          // Fallback manually if clipboard API fails
-          try {
-              const textArea = document.createElement("textarea");
-              textArea.value = url;
-              document.body.appendChild(textArea);
-              textArea.select();
-              document.execCommand('copy');
-              document.body.removeChild(textArea);
-              alert('사이트 링크가 복사되었습니다! 친구들에게 공유해보세요.');
-          } catch (err) {
-              alert('링크 복사에 실패했습니다.');
-          }
-        });
   };
 
   const startGame = () => {
@@ -435,11 +418,11 @@ const App: React.FC = () => {
   // Renders
   if (phase === GamePhase.INTRO) {
       return (
-          <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-black p-4 overflow-y-auto">
-              <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-600 mb-8 animate-pulse text-center leading-tight pt-10">
+          <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-black p-4">
+              <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-600 mb-8 animate-pulse text-center leading-tight">
                   DRAGON MUSIC<br/>MATH EVOLUTION
               </h1>
-              <div className="bg-white/10 p-8 rounded-2xl backdrop-blur-md border border-white/20 w-full max-w-md mb-8">
+              <div className="bg-white/10 p-8 rounded-2xl backdrop-blur-md border border-white/20 w-full max-w-md">
                 <label className="block text-gray-300 mb-2">당신의 이름은?</label>
                 <input 
                     type="text" 
@@ -450,21 +433,10 @@ const App: React.FC = () => {
                 />
                 <button 
                     onClick={startGame}
-                    className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-yellow-500/20 mb-3"
+                    className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-xl transition-all shadow-lg shadow-yellow-500/20"
                 >
                     모험 시작하기
                 </button>
-                <button 
-                    onClick={handleShare}
-                    className="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                    <Share2 size={16} /> 친구에게 공유하기
-                </button>
-              </div>
-
-              {/* Added Leaderboard to Start Screen */}
-              <div className="w-full max-w-md pb-10">
-                  <Leaderboard entries={leaderboard} hideButtons={true} />
               </div>
           </div>
       );
@@ -496,7 +468,7 @@ const App: React.FC = () => {
              <div className="text-center animate-fade-in-up">
                 <h2 className="text-3xl font-bold mb-8">{evolutionMessage}</h2>
                 <div className="relative w-64 h-64 mx-auto">
-                    <img src={pokemon.isShiny ? POKEMON_CONFIG[pokemon.stage].shinySprite : POKEMON_CONFIG[pokemon.stage].sprite} className="w-full h-full object-contain animate-bounce" />
+                    <img src={POKEMON_CONFIG[pokemon.stage].isShiny ? POKEMON_CONFIG[pokemon.stage].shinySprite : POKEMON_CONFIG[pokemon.stage].sprite} className="w-full h-full object-contain animate-bounce" />
                 </div>
              </div>
           </div>
