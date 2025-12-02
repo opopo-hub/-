@@ -49,8 +49,8 @@ export const SPECIES_CONFIG = {
   piplup: {
     name: '펭도리',
     type: '물',
-    description: '공격력 10% 증가, 방어력 7% 감소',
-    modifiers: { atk: 1.10, dmgTaken: 1.07 },
+    description: '공격력 10% 증가, 방어력 4% 감소',
+    modifiers: { atk: 1.10, dmgTaken: 1.04 },
     stages: {
       0: { name: '펭도리', maxHp: 80, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png', shinySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/393.png' },
       1: { name: '팽태자', maxHp: 100, sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/394.png', shinySprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/394.png' },
@@ -87,7 +87,7 @@ export const DAMAGE_VALUES = [35, 40, 45];
 
 export const MUSIC_URLS = {
   EVOLUTION: 'https://ia800100.us.archive.org/24/items/pokemon-diamond-and-pearl-music-compilation/Pokemon%20Diamond%20and%20Pearl%20-%20Evolution.mp3',
-  BOSS: 'https://ia800100.us.archive.org/24/items/pokemon-diamond-and-pearl-music-compilation/Pokemon%20Diamond%20and%20Pearl%20-%20Battle%21%20Dialga_Palkia.mp3',
+  BOSS: 'https://ia800100.us.archive.org/24/items/pokemon-diamond-and-pearl-music-compilation/Pokemon%20Diamond%20and%20Pearl%20-%20Battle!%20Wild%20Pokemon.mp3',
   ROUND_1: 'https://ia800100.us.archive.org/24/items/pokemon-diamond-and-pearl-music-compilation/Pokemon%20Diamond%20and%20Pearl%20-%20Route%20201%20%28Day%29.mp3',
   ROUND_2: 'https://ia800100.us.archive.org/24/items/pokemon-diamond-and-pearl-music-compilation/Pokemon%20Diamond%20and%20Pearl%20-%20Route%20209%20%28Day%29.mp3',
   VICTORY: 'https://ia800100.us.archive.org/24/items/pokemon-diamond-and-pearl-music-compilation/Pokemon%20Diamond%20and%20Pearl%20-%20Victory%21%20%28Trainer%20Battle%29.mp3'
